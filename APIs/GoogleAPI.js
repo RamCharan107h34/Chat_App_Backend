@@ -75,15 +75,14 @@ Router.post("/google", async (req, res) => {
     })
 
     res.json({
-      success: true,
-      token,
-      user: {
-        _id: user._id,
-        name: user.username,
-        email: user.email,
-        profileImageUrl: user.profileImageUrl
-      }
-    })
+  success: true,
+  user: {
+    _id: user._id,
+    username: user.username,    // ← to this
+    email: user.email,
+    profileImageUrl: user.profileImageUrl
+  }
+})
 
   } catch (error) {
     console.log("Google auth error:", error)
