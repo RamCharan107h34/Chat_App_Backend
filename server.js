@@ -1,5 +1,5 @@
 import exp from 'express'
-import {connect} from 'mongoose'
+import { connect } from 'mongoose'
 import { config } from 'dotenv'
 import { createServer } from 'node:http'
 import { Server } from "socket.io";
@@ -7,107 +7,105 @@ import cors from 'cors'
 import { userApp } from './APIs/UserAPI.js';
 import { chatApp } from './APIs/ChannelAPI.js';
 import cookieParser from 'cookie-parser'
-import jwt from "jsonwebtoken"
 import { setupSocket } from "./Sockets/Socket.js";
 import { messageApp } from "./APIs/MessageAPI.js";
-import {fileTransferApp } from "./APIs/FileTransferAPI.js"
+import { fileTransferApp } from "./APIs/FileTransferAPI.js"
 import googleAuthRoute from './APIs/GoogleAPI.js'
 import dns from "node:dns/promises";
+
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
-const app=exp()
-const server=createServer(app)
-
+// ✅ Load env vars FIRST before anything else reads them
 config()
 
-const envOrigins = `${process.env.FRONTEND_URL || ''},${process.env.FRONTEND_URLS || ''}`
-  .split(',')
-  .map((origin) => origin.trim())
+const app = exp()
+const server = createServer(app)
+
+// ✅ Build allowed origins from environment variables
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  process.env.FRONTEND_URL,
+  ...(process.env.FRONTEND_URLS?.split(',') ?? [])
+]
+  .map(o => o?.trim())
   .filter(Boolean)
 
+console.log('Allowed origins:', allowedOrigins)
+
+// ✅ HTTP CORS
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: allowedOrigins,
   credentials: true
-}));
+}))
 
-
-//body parser middleware
+// Body parser
 app.use(exp.json())
 
-//cookie parser
+// Cookie parser
 app.use(cookieParser())
 
-//forward to userapi if path starts with /user-api
-app.use('/user-api',userApp)
-app.use('/chat-api',chatApp)
-app.use("/message-api", messageApp);
-app.use("/fileTransfer-api",fileTransferApp)
-app.use("/auth",googleAuthRoute)
-app.use("/uploads", exp.static("uploads"));
+// Routes
+app.use('/user-api', userApp)
+app.use('/chat-api', chatApp)
+app.use('/message-api', messageApp)
+app.use('/fileTransfer-api', fileTransferApp)
+app.use('/auth', googleAuthRoute)
+app.use('/uploads', exp.static('uploads'))
 
-//socket server
+// ✅ Socket.IO with same allowed origins
 const io = new Server(server, {
   cors: {
-    origin: [
-      'http://localhost:5173',    // Frontend dev server
-      'http://127.0.0.1:5173',
-    ],
+    origin: allowedOrigins,
     credentials: true,
-    methods: ["GET", "POST","PUT","DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"]
   }
-});
+})
 
-setupSocket(io);
+setupSocket(io)
 
-// choose port early so handlers can access it
-const PORT = parseInt(process.env.PORT, 10) || 3000;
+const PORT = parseInt(process.env.PORT, 10) || 3000
 
-// handle unexpected rejections and uncaught exceptions
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason)
+})
 
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
-  process.exit(1);
-});
+  console.error('Uncaught Exception thrown:', err)
+  process.exit(1)
+})
 
 const connectDB = async () => {
   try {
-    await connect(process.env.DB_URL);
-    console.log('DB connected ');
+    await connect(process.env.DB_URL)
+    console.log('DB connected')
 
-    // if server is already listening (e.g., nodemon restarted the module), avoid listening twice
     if (server.listening) {
-      console.log(`Server already listening on port ${PORT}`);
-      return;
+      console.log(`Server already listening on port ${PORT}`)
+      return
     }
 
-    server.listen(PORT, () => console.log(`server listening on ${PORT}`));
+    server.listen(PORT, () => console.log(`Server listening on port ${PORT}`))
   } catch (error) {
-    console.log('error in connecting', error.message);
-    process.exit(1);
+    console.error('Error connecting to DB:', error.message)
+    process.exit(1)
   }
-};
+}
 
-connectDB();
+connectDB()
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error(err)
 
-app.use((err,req,res,next)=>{
-    console.log(err)
-    //ValidationError
-    if(err.name=="ValidationError"){
-        return res.status(400).json({message:"Error occured",error:err})
-    }
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ message: 'Validation error', error: err })
+  }
 
-    //CastError
-    if(err.name=="CastError"){
-        return res.status(400).json({message:"Error occured",error:err})
-    }
+  if (err.name === 'CastError') {
+    return res.status(400).json({ message: 'Cast error', error: err })
+  }
 
-    //server side error
-    res.status(500).json({message:"error occured",error:err.message})
+  res.status(500).json({ message: 'Server error', error: err.message })
 })
-
-
