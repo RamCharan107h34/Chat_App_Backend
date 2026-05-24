@@ -8,7 +8,7 @@ import { userApp } from './APIs/UserAPI.js';
 import { chatApp } from './APIs/ChannelAPI.js';
 import cookieParser from 'cookie-parser'
 import jwt from "jsonwebtoken"
-import { setupSocket } from "./sockets/socket.js";
+import { setupSocket } from "./Sockets/socket.js";
 import { messageApp } from "./APIs/MessageAPI.js";
 import {fileTransferApp } from "./APIs/FileTransferAPI.js"
 import googleAuthRoute from './APIs/GoogleAPI.js'
