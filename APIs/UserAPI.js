@@ -84,11 +84,12 @@ userApp.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
     // Store token as HTTP-only cookie
-    res.cookie("token", signtoken, {
-            httpOnly: true,
-            secure: true,        // REQUIRED on Render (HTTPS)
-            sameSite: "none"     // REQUIRED for Vercel ↔ Render
-        });
+    res.cookie("token", signedToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 60 * 60 * 1000
+    });
     // Send successful response
     res.status(200).json({
       message: 'Login successful',
@@ -144,8 +145,8 @@ userApp.get("/logout", (req, res) => {
   //delete token from cookie storage
   res.clearCookie("token", {
     httpOnly:true,
-    sameSite:"lax",
-    secure:false
+    sameSite:"none",
+    secure:true
   });
   //send res
   res.status(200).json({ message: "Logout success" });
@@ -160,8 +161,8 @@ userApp.get("/logout", (req, res) => {
       // clear cookie on this device as well
       res.clearCookie("token", {
         httpOnly: true,
-        sameSite: "lax",
-        secure: false
+        sameSite: "none",
+        secure: true
       });
 
       res.status(200).json({ message: "Logged out from all devices" });
@@ -311,8 +312,8 @@ userApp.delete("/delete-user",verifyToken,async (req, res) => {
     // logout user
     res.clearCookie("token", {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false
+      sameSite: "none",
+      secure: true
     });
 
     res.status(200).json({
