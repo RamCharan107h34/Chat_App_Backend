@@ -84,11 +84,11 @@ userApp.post('/login', async (req, res) => {
       { expiresIn: '1h' }
     );
     // Store token as HTTP-only cookie
-    res.cookie('token', signedToken, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-    });
+    res.cookie("token", signtoken, {
+            httpOnly: true,
+            secure: true,        // REQUIRED on Render (HTTPS)
+            sameSite: "none"     // REQUIRED for Vercel ↔ Render
+        });
     // Send successful response
     res.status(200).json({
       message: 'Login successful',
