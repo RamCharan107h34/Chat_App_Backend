@@ -1,0 +1,33 @@
+###get channel messages
+GET http://localhost:3000/message-api/get-channel
+Content-Type: application/json
+
+{
+    "channelName":"channel01"
+}
+
+###get dm messages
+GET http://localhost:3000/message-api/get-dm
+Content-Type: application/json
+
+{
+    "chatId":"69f9893977faeef6c0519c5f"
+}
+
+###edit message
+PATCH http://localhost:3000/message-api/edit
+Content-Type: application/json
+
+{
+    "messageId":"69f9893977faeef6c0519c5f",
+    "content":"good morning"
+}
+
+###delete message
+DELETE  http://localhost:3000/message-api/delete
+Content-Type: application/json
+
+{
+    "messageId":"69f9893977faeef6c0519c5f",
+}
+
